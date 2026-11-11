@@ -1,0 +1,13 @@
+const $=id=>document.getElementById(id),view=$('view');
+function nav(){let v=$('address').value.trim();if(!v)return;if(!/^[a-zA-Z][a-zA-Z0-9+.-]*:\/\//.test(v))v=/^[\w.-]+\.[a-z]{2,}/i.test(v)?'https://'+v:'https://www.google.com/search?q='+encodeURIComponent(v);view.loadURL(v)}
+$('go').onclick=nav;$('address').addEventListener('keydown',e=>{if(e.key==='Enter')nav()});$('back').onclick=()=>view.canGoBack()&&view.goBack();$('forward').onclick=()=>view.canGoForward()&&view.goForward();$('reload').onclick=()=>view.reload();view.addEventListener('did-navigate',e=>$('address').value=e.url);view.addEventListener('did-navigate-in-page',e=>$('address').value=e.url);
+$('newTab').onclick=()=>{view.loadURL('https://www.google.com');$('address').value='https://www.google.com'};$('settingsBtn').onclick=()=>$('vpnPanel').classList.toggle('hidden');$('closePanel').onclick=()=>$('vpnPanel').classList.add('hidden');
+function status(t,k=''){ $('status').textContent=t;$('status').className='status '+k}
+function connected(on){$('vpnPill').classList.toggle('on',on);$('vpnLabel').textContent=on?'VPN подключён':'VPN выключен'}
+function setServers(list){$('server').innerHTML='<option value="">Первый сервер (по умолчанию)</option>';for(let s of list||[]){let o=document.createElement('option');o.value=s;o.textContent=s;$('server').append(o)}}
+$('connect').onclick=async()=>{let v=$('subscription').value.trim();if(!v)return status('Добавьте URL или содержимое подписки.','error');status('Загрузка подписки и запуск VPN…');try{let r=await window.vpnAPI.start(v);connected(true);setServers(r.servers);status('VPN запущен. Трафик браузера направляется через прокси.','success')}catch(e){connected(false);status(e.message,'error')}};
+$('disconnect').onclick=async()=>{await window.vpnAPI.stop();connected(false);status('VPN отключён.')};
+$('refresh').onclick=async()=>{try{let r=await window.vpnAPI.refresh();connected(true);setServers(r.servers);status('Подписка обновлена.','success')}catch(e){status(e.message,'error')}};
+$('server').onchange=async()=>{if(!$('server').value)return;try{await window.vpnAPI.choose($('server').value);status('Сервер переключён.','success')}catch(e){status(e.message,'error')}};
+$('saveSettings').onclick=async()=>{let v={autoConnect:$('autoConnect').checked,autoUpdate:$('autoUpdate').checked,adBlock:$('adBlock').checked,updateMinutes:+$('updateMinutes').value};await window.vpnAPI.settings(v);status('Настройки сохранены.','success')};
+window.vpnAPI.onLost(()=>{connected(false);status('VPN-процесс завершился. Прокси браузера отключён. Проверьте соединение.','error')});window.vpnAPI.onAutoError(m=>status('Автоподключение: '+m,'error'));window.vpnAPI.onUpdateError(m=>status('Ошибка обновления подписки: '+m,'error'));

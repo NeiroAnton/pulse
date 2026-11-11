@@ -1,0 +1,2 @@
+const {contextBridge,ipcRenderer}=require('electron');
+contextBridge.exposeInMainWorld('vpnAPI',{start:v=>ipcRenderer.invoke('vpn:start',v),stop:()=>ipcRenderer.invoke('vpn:stop'),status:()=>ipcRenderer.invoke('vpn:status'),settings:v=>ipcRenderer.invoke('vpn:settings',v),choose:v=>ipcRenderer.invoke('vpn:choose',v),refresh:()=>ipcRenderer.invoke('vpn:refresh'),openSettings:()=>ipcRenderer.invoke('app:settings'),onLost:f=>ipcRenderer.on('vpn:lost',f),onAutoError:f=>ipcRenderer.on('vpn:auto-error',(_,m)=>f(m)),onUpdateError:f=>ipcRenderer.on('vpn:update-error',(_,m)=>f(m))});
